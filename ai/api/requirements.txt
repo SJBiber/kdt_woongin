@@ -1,0 +1,9 @@
+# YouTube API와 통신하기 위한 구글 공식 라이브러리
+google-api-python-client
+
+# 데이터 수집, 분석 및 CSV 저장을 위한 데이터 분석 라이브러리
+pandas
+
+# .env 파일에서 API 키 등의 환경 변수를 로드하기 위한 라이브러리
+python-dotenv
+#ß
