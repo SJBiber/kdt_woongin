@@ -1,0 +1,8 @@
+google-api-python-client
+pandas
+numpy
+supabase
+python-dotenv
+httpx
+apscheduler
+scikit-learn
