@@ -1,0 +1,6 @@
+requests
+supabase>=2.12.0
+httpx==0.27.2
+python-dotenv
+schedule
+pandas
