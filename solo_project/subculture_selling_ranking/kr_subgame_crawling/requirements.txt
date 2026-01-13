@@ -1,9 +1,0 @@
-playwright
-beautifulsoup4
-requests
-httpx
-pandas
-supabase
-python-dotenv
-pytrends
-google-api-python-client
