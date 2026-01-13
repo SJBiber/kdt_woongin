@@ -1,6 +1,6 @@
 import os
 from googleapiclient.discovery import build
-from datetime import datetime
+from datetime import datetime, timedelta
 import pandas as pd
 from dotenv import load_dotenv
 
@@ -13,10 +13,11 @@ API_KEY = os.getenv('YOUTUBE_API_KEY')
 YOUTUBE_API_SERVICE_NAME = 'youtube'
 YOUTUBE_API_VERSION = 'v3'
 
-def youtube_search(query, max_results=1000):
+def youtube_search(query, max_results=2000):
     """
     YouTube에서 키워드를 검색하고 영상 목록과 상세 통계 데이터를 가져오는 함수입니다.
     기본적으로 50개 이상의 결과를 가져오기 위해 페이지네이션(nextPageToken)을 사용합니다.
+    최근 6개월 이내의 영상만 검색합니다.
     
     :param query: 검색할 키워드 (문자열)
     :param max_results: 가져올 최대 검색 결과 개수 (기본값 1000)
@@ -25,6 +26,10 @@ def youtube_search(query, max_results=1000):
     if not API_KEY:
         print("에러: YOUTUBE_API_KEY가 설정되지 않았습니다. .env 파일을 확인해주세요.")
         return None
+
+    # 6개월 전 날짜 계산 (RFC 3339 형식: YYYY-MM-DDTHH:MM:SSZ)
+    six_months_ago = datetime.utcnow() - timedelta(days=182) # 약 6개월
+    published_after = six_months_ago.strftime('%Y-%m-%dT%H:%M:%SZ')
 
     # YouTube API 서비스 객체 생성
     youtube = build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION, developerKey=API_KEY)
@@ -46,6 +51,7 @@ def youtube_search(query, max_results=1000):
             maxResults=results_to_fetch, # 요청 개수
             type='video',           # 비디오 타입만 검색
             order='date',           # 최신 날짜순 정렬
+            publishedAfter=published_after, # 최근 6개월 이내의 영상만 필터링
             pageToken=next_page_token # 다음 페이지를 가져오기 위한 토큰
         ).execute()
 

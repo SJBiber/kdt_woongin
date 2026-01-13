@@ -42,29 +42,48 @@ class ZigzagCollector:
                 
                 # 3. 대항목 클릭
                 print(f"Finding category item: {category_name}")
-                # Target items that are likely to be the main navigation buttons (avoiding sidebar that only scrolls)
-                # We look for all matching items and try to click the one that navigates.
-                category_locators = page.locator(f"//p[text()='{category_name}'] | //span[text()='{category_name}'] | //button[contains(., '{category_name}')]")
-                count = await category_locators.count()
                 
-                clicked = False
-                if count > 0:
-                    # In Zigzag, the sidebar items usually appear first. The main content items follow.
-                    # We try to click the last one first as it's more likely to be the content link.
-                    for i in reversed(range(count)):
-                        target = category_locators.nth(i)
-                        old_url = page.url
-                        await target.click()
-                        await asyncio.sleep(3)
-                        if page.url != old_url:
-                            clicked = True
-                            print(f"Successfully navigated to: {page.url}")
-                            break
+                # First, find and click the sidebar item to scroll/activate the section
+                sidebar_item = page.locator('button').filter(has_text=re.compile(f"^{category_name}$")).first
+                if await sidebar_item.count() > 0:
+                    print(f"Clicking sidebar item: {category_name}")
+                    await sidebar_item.click()
+                    await asyncio.sleep(1)
+
+                # Now find the header button in the content area that leads to the full page.
+                # Usually contains the name and a chevron ">".
+                header_link = page.locator('button').filter(has_text=re.compile(f"^{category_name}.*>")).first
+                
+                if await header_link.count() == 0:
+                    # Fallback: look for any button that starts with category name and likely navigates
+                    header_link = page.locator('button').filter(has_text=re.compile(f"^{category_name}")).filter(has=page.locator('svg')).first
+                
+                if await header_link.count() > 0:
+                    print(f"Clicking main category header link for: {category_name}")
+                    await header_link.click()
+                    await asyncio.sleep(3)
+                    clicked = True
+                else:
+                    # Final fallback: search for text and try to find a clickable parent or siblings
+                    print("Heading link not found with specific pattern, trying generic text search...")
+                    category_locators = page.locator(f"//p[text()='{category_name}'] | //span[text()='{category_name}'] | //button[contains(., '{category_name}')]")
+                    count = await category_locators.count()
+                    if count > 0:
+                        # Pick the one that changes the URL
+                        for i in range(count):
+                            target = category_locators.nth(i)
+                            old_url = page.url
+                            await target.click()
+                            await asyncio.sleep(2)
+                            if page.url != old_url:
+                                clicked = True
+                                print(f"Successfully navigated via fallback to: {page.url}")
+                                break
                 
                 if not clicked:
-                    print(f"Category '{category_name}' navigation failed or not found. Current URL: {page.url}")
-                    # If we are already on a relevant page, continue. If not, stop.
-                    if category_name not in await page.title() and "/categories/" not in page.url:
+                    print(f"Category '{category_name}' navigation failed. Current URL: {page.url}")
+                    if "/categories/" in page.url:
+                        print("Stopping because we are still on categories page.")
                         return
 
                 # 4. 정렬: 인기순
@@ -126,24 +145,29 @@ class ZigzagCollector:
             # 1. 상품명
             product_name = "Unknown"
             try:
-                # OpenGraph title is usually clean: "Brand Name Product Name - Zigzag"
-                og_title = await page.locator("meta[property='og:title']").get_attribute("content")
-                if og_title:
-                    product_name = og_title.split(" - ")[0].strip()
+                # Primary: H1 with semantic classes
+                name_sel = page.locator('h1[class*="BODY"], h1[class*="css-"], h1').first
+                if await name_sel.count() > 0:
+                    product_name = (await name_sel.text_content()).strip()
+                else:
+                    # Fallback to OG title
+                    og_title = await page.locator("meta[property='og:title']").get_attribute("content")
+                    if og_title:
+                        product_name = og_title.split(" - ")[0].strip()
             except:
                 pass
 
             # 2. 브랜드명
             brand_name = "Unknown"
-            # Brand is often linked to /store/ or has specific brand classes
-            brand_sel = page.locator('p[class*="brand"], a[href*="/store/"], div[class*="StoreName"]').first
+            # Updated selectors based on current site structure
+            brand_sel = page.locator('a[class*="e1jx89fy1"], h2[class*="e1qy47wz6"], [class*="StoreName"], p[class*="brand"]').first
             if await brand_sel.count() > 0:
                 brand_name = (await brand_sel.text_content()).strip()
 
             # 3. 가격
             final_price = 0
-            # Look for elements with "SalesPrice" or specific bold price classes
-            price_sel = page.locator('span[class*="SalesPrice"], span[class*="Price"].bold, div[class*="SalesPrice"]').first
+            # Target specific price classes
+            price_sel = page.locator('[class*="e1sus6ys1"], span[class*="SalesPrice"], span[class*="Price"].bold, div[class*="SalesPrice"]').first
             if await price_sel.count() > 0:
                 text = await price_sel.text_content()
                 match = re.search(r"[\d,]+", text)
@@ -154,8 +178,8 @@ class ZigzagCollector:
             review_count = 0
             rating_average = 0.0
             
-            # Review count often in the tab meta or summary
-            rev_cnt_sel = page.locator('span[class*="review_count"], a[href*="/review"] span').first
+            # Review count summary near title/rating
+            rev_cnt_sel = page.locator('[class*="evpy3qu0"], [class*="review_count"], a[href*="/review"] span').first
             if await rev_cnt_sel.count() > 0:
                 text = await rev_cnt_sel.text_content()
                 match = re.search(r"[\d,]+", text)
@@ -163,7 +187,7 @@ class ZigzagCollector:
                     review_count = int(match.group().replace(",", ""))
 
             # Rating
-            rating_sel = page.locator('span[class*="rating_score"], div[class*="Rating"]').first
+            rating_sel = page.locator('[class*="Rating"], span[class*="rating_score"]').first
             if await rating_sel.count() > 0:
                 text = await rating_sel.text_content()
                 match = re.search(r"(\d+(\.\d+)?)", text)
@@ -192,27 +216,34 @@ class ZigzagCollector:
             print(f"Saved: {product_name[:30]}... | Price: {final_price} | Reviews: {review_count}")
 
             # 6. 리뷰 수집 (최대 20개)
-            # Try to click review tab if it's not active
+            print(f"Collecting reviews for {product_name}...")
             rev_tab = page.locator('button:has-text("리뷰"), a:has-text("리뷰")').first
             if await rev_tab.count() > 0:
                 await rev_tab.click()
                 await asyncio.sleep(2)
+                # Scroll to ensure lazy items load
+                for _ in range(3):
+                    await page.mouse.wheel(0, 1000)
+                    await asyncio.sleep(0.5)
 
             reviews = []
-            # Updated selector for review items based on analysis
-            review_els = await page.locator('div[data-custom-ta-key*="PDP_REVIEW_CELL"], div[class*="ReviewItem"]').all()
+            # Updated selectors for review items container and content
+            # data-review-feed-index is a very reliable selector for Zigzag reviews
+            review_els = await page.locator('div[data-review-feed-index], div[class*="ReviewItem"], div[data-custom-ta-key*="PDP_REVIEW_CELL"], li[class*="ReviewItem"]').all()
+            print(f"Found {len(review_els)} potential review elements.")
             
             for item in review_els[:20]:
                 content = ""
                 rating = 5
                 
-                # Content: Looking for BODY_14 REGULAR or similar semantic classes
-                content_el = item.locator('div[class*="BODY"], div[class*="content"], p[class*="text"]').first
-                if await content_el.count() > 0:
+                # Content: span[class*="ebrcgb90"] is highly specific for review text
+                content_el = item.locator('span[class*="ebrcgb90"], span[class*="zds4_"], div[class*="BODY"], div[class*="content"], p[class*="text"]').first
+                 if await content_el.count() > 0:
                     content = (await content_el.text_content()).strip()
                 
-                # Rating: Usually an aria-label like "별점 5점"
-                star_el = item.locator('div[aria-label*="별점"]').first
+                # Rating: aria-label contains star count
+                ## 라뷰별 별점 데이터는 그림으로 수치화 되어 있음 이거 한번 스크립트에서 확인 해봐야함ss
+                star_el = item.locator('[aria-label*="별점"], [class*="Rating"], [class*="star"]').first
                 if await star_el.count() > 0:
                     label = await star_el.get_attribute("aria-label")
                     if label:
@@ -224,6 +255,9 @@ class ZigzagCollector:
 
             if reviews:
                 self.db.save_reviews(product_id, reviews)
+                print(f"Success: Collected {len(reviews)} reviews.")
+            else:
+                print("No reviews found or failed to parse reviews.")
 
         finally:
             await page.close()
