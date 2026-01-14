@@ -46,13 +46,16 @@
 ### 데이터 파이프라인
 ```mermaid
 graph LR
-    A[데이터 소스: Naver, YouTube] --> B{Python Scraper}
+    A[데이터 소스: Naver, YouTube, Google] --> B{Airflow DAG / Python Scraper}
     B --> C[(Supabase DB: PostgreSQL)]
-    C --> D{Python/SQL Analyzer}
+    C --> D{SQL Analyzer}
+    D --> E[Redash Dashboard]
+```
+
 ### 시스템 구조
 **[데이터 소스]** (Naver, YouTube, Google Trends)
     ↓ (Airflow DAG: 가상환경 배치 실행 및 전처리)
-**[Supabase DB]** (PostgreSQL 정형 데이터 및 JSONB 적재)
+**[Supabase DB]** (PostgreSQL 정형 데이터 적재)
     ↓ (SQL 쿼리: 지표 가공 및 관심도 지수 산출)
 **[Redash 대시보드]** (실시간 시각화 및 트렌드 분석)
 
