@@ -22,18 +22,15 @@ class YouTubeTrendCrawler:
         
         self.youtube = build("youtube", "v3", developerKey=self.api_key)
 
-    def get_bulk_metrics(self, keyword, start_date, end_date):
-        """지정된 기간 동안 업로드된 모든 영상의 데이터를 가져와 일별로 집계합니다."""
-        start_time = start_date.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
-        end_time = end_date.replace(hour=23, minute=59, second=59, microsecond=0).isoformat()
+    def get_metrics_for_period(self, keyword, start_date, end_date):
+        """특정 기간 동안 업로드된 영상 데이터를 가져옵니다."""
+        # RFC 3339 규격에 맞춰 'Z' 포맷 사용 (유튜브 API 권장)
+        start_time = start_date.strftime('%Y-%m-%dT00:00:00Z')
+        end_time = end_date.strftime('%Y-%m-%dT23:59:59Z')
         
-        print(f"[*] 분석 기간: {start_date.strftime('%Y-%m-%d')} ~ {end_date.strftime('%Y-%m-%d')}")
-        print(f"[*] '{keyword}' 키워드로 일괄 검색 시작...")
-
         video_list = []
         next_page_token = None
 
-        # 1. 기간 내 모든 영상 ID 수집
         while True:
             try:
                 search_response = self.youtube.search().list(
@@ -53,10 +50,10 @@ class YouTubeTrendCrawler:
                 if not items:
                     break
 
-                # 영상 ID 수집 및 기본 정보 저장
+                # 영상 ID 수집
                 current_batch_ids = [item["id"]["videoId"] for item in items]
                 
-                # 2. 수집된 ID들의 상세 통계 즉시 가져오기 (50개씩)
+                # 상세 통계 가져오기
                 stats_response = self.youtube.videos().list(
                     part="statistics,snippet",
                     id=",".join(current_batch_ids)
@@ -64,7 +61,7 @@ class YouTubeTrendCrawler:
 
                 for item in stats_response.get("items", []):
                     stats = item["statistics"]
-                    pub_date = item["snippet"]["publishedAt"][:10] # YYYY-MM-DD 만 추출
+                    pub_date = item["snippet"]["publishedAt"][:10]
                     video_list.append({
                         "date": pub_date,
                         "view_count": int(stats.get("viewCount", 0)),
@@ -72,32 +69,51 @@ class YouTubeTrendCrawler:
                         "comment_count": int(stats.get("commentCount", 0))
                     })
 
-                print(f"[+] 누적 수집 영상 수: {len(video_list)}...", end="\r")
-
                 next_page_token = search_response.get("nextPageToken")
                 if not next_page_token:
                     break
             except Exception as e:
-                print(f"\n[!] API 호출 중 오류 발생: {e}")
                 if "quotaExceeded" in str(e):
-                    print("[CRITICAL] API 할당량이 초과되었습니다.")
-                    break
+                    print("\n[CRITICAL] API 할당량이 초과되었습니다.")
+                    return video_list
+                print(f"\n[!] 기간 수집 중 오류: {e}")
                 break
 
-        print(f"\n[*] 수집 완료. 총 {len(video_list)}개의 영상을 분석합니다.")
+        return video_list
+
+    def get_historical_data(self, keyword, total_days=180):
+        """전체 기간을 30일 단위로 나누어 누락을 방지하며 수집합니다."""
+        end_date = datetime.now(timezone.utc) - timedelta(days=1)
+        start_date = end_date - timedelta(days=total_days)
         
-        if not video_list:
+        print(f"[*] 전체 분석 기간: {start_date.strftime('%Y-%m-%d')} ~ {end_date.strftime('%Y-%m-%d')}")
+        
+        all_videos = []
+        current_end = end_date
+        
+        while current_end > start_date:
+            current_start = max(start_date, current_end - timedelta(days=30))
+            print(f"[*] 데이터 확보 중: {current_start.strftime('%Y-%m-%d')} ~ {current_end.strftime('%Y-%m-%d')}...")
+            
+            period_data = self.get_metrics_for_period(keyword, current_start, current_end)
+            all_videos.extend(period_data)
+            
+            print(f"  -> 현재까지 총 {len(all_videos)}개 영상 식별됨")
+            
+            # 다음 30일 구간으로 이동
+            current_end = current_start - timedelta(days=1)
+            
+        if not all_videos:
             return None
 
-        # 3. Pandas를 활용하여 일별 집계
-        df = pd.DataFrame(video_list)
+        # Pandas를 활용하여 일별 집계
+        df = pd.DataFrame(all_videos)
         summary_df = df.groupby("date").agg({
             "view_count": ["count", "sum"],
             "like_count": "sum",
             "comment_count": "sum"
         }).reset_index()
 
-        # 컬럼명 정리
         summary_df.columns = ["date", "video_count", "total_views", "total_likes", "total_comments"]
         summary_df["keyword"] = keyword
         
@@ -107,16 +123,13 @@ def main():
     try:
         crawler = YouTubeTrendCrawler()
         db = SupabaseManager()
-        keyword = "두쫀쿠"
+        keyword = "두바이 쫀득 쿠키" # "두쫀쿠"보다 더 정확한 검색을 위해 풀네임 권장
         
-        # 날짜 범위 설정 (6개월 전 ~ 어제)
-        end_date = datetime.now(timezone.utc) - timedelta(days=1)
-        start_date = end_date - timedelta(days=180)
-        
-        summary_df = crawler.get_bulk_metrics(keyword, start_date, end_date)
+        # 180일치 데이터 수집 시작
+        summary_df = crawler.get_historical_data(keyword, total_days=180)
         
         if summary_df is not None:
-            print(f"[*] 총 {len(summary_df)}일치 데이터를 DB에 저장합니다...")
+            print(f"\n[*] 총 {len(summary_df)}일치 데이터를 DB에 저장합니다...")
             
             for _, row in summary_df.iterrows():
                 db_data = {
