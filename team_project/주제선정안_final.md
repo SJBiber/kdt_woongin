@@ -54,9 +54,13 @@ graph LR
 
 ### 시스템 구조
 **[데이터 소스]** (Naver, YouTube, Google Trends)
-    ↓ (Airflow DAG: 가상환경 배치 실행 및 전처리)
+
+↓ (Airflow DAG: 가상환경 배치 실행 및 전처리)
+
 **[Supabase DB]** (PostgreSQL 정형 데이터 적재)
-    ↓ (SQL 쿼리: 지표 가공 및 관심도 지수 산출)
+
+↓ (SQL 쿼리: 지표 가공 및 관심도 지수 산출)
+
 **[Redash 대시보드]** (실시간 시각화 및 트렌드 분석)
 
 ### 상세 설계
