@@ -26,7 +26,7 @@ def main():
     # 데이터 불러오기
     with st.spinner('데이터를 불러오는 중...'):
         # DB에 적재된 모든 키워드 목록 가져오기
-        kw_response = db.supabase.table("naver_blog_trends").select("keyword").execute()
+        kw_response = db.supabase.table("maratang_blog_trends").select("keyword").execute()
         all_keywords = sorted(list(set([item['keyword'] for item in kw_response.data])))
         
         if not all_keywords:
@@ -47,7 +47,7 @@ def main():
             return
 
         # 선택된 키워드 데이터 조회
-        response = db.supabase.table("naver_blog_trends")\
+        response = db.supabase.table("maratang_blog_trends")\
             .select("*")\
             .in_("keyword", selected_keywords)\
             .order("date")\
