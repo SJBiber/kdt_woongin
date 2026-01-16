@@ -6,9 +6,13 @@ from scraper import NaverBlogCrawler
 
 def main():
     # 1. 설정
-    keyword = "마라샹궈"
-    start_date_str = "2018-01-01"
-    end_date_str = "2025-01-16"
+    # 수집하고 싶은 키워드
+    keyword = "탕후루"
+    # 수집 시작일
+    start_date_str = "2025-01-17"
+    # 수집 종료일
+    end_date_str = "2026-01-16"
+    # 저장 파일명
     output_file = f"{keyword}_blog_counts.csv"
     
     start_dt = datetime.strptime(start_date_str, "%Y-%m-%d")
@@ -27,10 +31,20 @@ def main():
     results = []
     current_dt = start_dt
     
-    # 기존 파일이 있으면 삭제하고 새로 시작 (요청하신 새로운 시작을 위해)
+    # 기존 파일이 있으면 마지막 날짜 확인 후 이어받기
     if os.path.exists(output_file):
-        os.remove(output_file)
-        print(f"[*] 기존 {output_file} 파일을 삭제하고 새로 수집을 시작합니다.")
+        try:
+            df_existing = pd.read_csv(output_file)
+            if not df_existing.empty:
+                last_date_str = df_existing['date'].max()
+                last_dt = datetime.strptime(last_date_str, "%Y-%m-%d")
+                current_dt = last_dt + timedelta(days=1)
+                print(f"[*] 기존 {output_file}을 발견했습니다. {last_date_str} 이후부터 수집을 재개합니다.")
+            else:
+                print(f"[*] 기존 {output_file}이 비어있어 처음부터 수집을 시작합니다.")
+        except Exception as e:
+            print(f"[!] 기존 파일을 읽는 중 오류가 발생했습니다: {e}")
+            print("[*] 처음부터 수집을 시작합니다.")
 
     # 3. 루프 실행
     try:
