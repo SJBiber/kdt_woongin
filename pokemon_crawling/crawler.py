@@ -123,7 +123,7 @@ if __name__ == "__main__":
     # 2022.01.01 ~ 2023.08.01 기간 설정
     crawler.run(
         target_keywords, 
-        start_date="2022-01-01", 
-        end_date="2023-08-01", 
+        start_date="2025-01-16", 
+        end_date="2026-01-15", 
         output_file=csv_path
     )
