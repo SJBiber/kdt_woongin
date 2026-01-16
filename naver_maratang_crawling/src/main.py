@@ -6,10 +6,10 @@ from scraper import NaverBlogCrawler
 
 def main():
     # 1. 설정
-    keyword = "마라탕"
-    start_date_str = "2018-08-01"
-    end_date_str = "2023-08-01"
-    output_file = "maratang_blog_counts.csv"
+    keyword = "마라샹궈"
+    start_date_str = "2018-01-01"
+    end_date_str = "2025-01-16"
+    output_file = f"{keyword}_blog_counts.csv"
     
     start_dt = datetime.strptime(start_date_str, "%Y-%m-%d")
     end_dt = datetime.strptime(end_date_str, "%Y-%m-%d")
