@@ -36,11 +36,3 @@ jobs:
         cd youtube_trend_tracker/scripts
         # 최근 1일 수집 (선택: 3, 일수: 1, 확인: y)
         echo -e "3\n1\ny" | python3 collect.py
-    
-    - name: 수집 결과 업로드
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: collection-logs
-        path: youtube_trend_tracker/logs/*.log
-        retention-days: 7
