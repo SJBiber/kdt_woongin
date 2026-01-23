@@ -1,0 +1,45 @@
+# 🤖 로봇 이름: 매일 아침 자동 업무 지시서
+name: 일일 자동화 로봇
+
+# 언 제 실행할까요?
+on:
+  schedule:
+    # '0 0 * * *' 는 한국 시간으로 매일 오전 9시 정각을 의미합니다.
+    - cron: '0 0 * * *'
+  # 내가 원할 때 버튼을 눌러서 바로 시킬 수도 있게 합니다.
+  workflow_dispatch:
+
+# 어 떤 일을 시킬까요?
+jobs:
+  daily_task:
+    # 튼튼한 가상 컴퓨터를 한 대 빌립니다.
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. 내 저장소에 있는 코드 파일들을 가져옵니다.
+      - name: 코드 가져오기
+        uses: actions/checkout@v3
+
+      # 2. 파이썬 도구를 설치합니다.
+      - name: 파이썬 설치
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      # 3. 필요한 라이브러리(패키지)를 설치합니다. 
+      #(깃이랑 연결되어 있는 폴더 기준으로 잡고 requirements.txt 위치까지 세팅해야합니다!)
+      #예시: kdt_woongin 폴더(git이랑 연동 되어 있는 폴더임)안에 .git 폴더랑 project 폴더가 있고 
+      # project 폴더안에 requirements.txt , example.py가 있다면
+      # requirements.txt를 찾아서 설치하는 명령어는 pip install -r project/requirements.txt
+      - name: 도구함 설치
+        run: |
+          pip install -r project/requirements.txt 
+
+      # 4. 미리 정해둔 비밀번호(금고)에서 정보를 가져와 실행합니다.
+      # example.py를 찾아서 실행하는 명령어는 python project/example.py
+      - name: 프로그램 실행
+        env:
+          MY_SECRET_KEY: ${{ secrets.MY_SECRET_KEY }}
+          DB_URL: ${{ secrets.DB_URL }}
+        run: |
+          python project/example.py
