@@ -2,11 +2,18 @@ import json
 import os
 from datetime import datetime
 from supabase import create_client, Client
-from configs.settings import settings
+import sys
+from pathlib import Path
+
+# 프로젝트 루트 경로 설정
+PROJECT_ROOT = Path(__file__).parent.parent
+sys.path.insert(0, str(PROJECT_ROOT / 'config'))
+
+from settings import settings
 
 class DatabaseManager:
     def __init__(self):
-        self.local_storage_path = "data/collected_results.json"
+        self.local_storage_path = str(PROJECT_ROOT / "config" / "data" / "collected_results.json")
         
         # Ensure data directory exists
         os.makedirs(os.path.dirname(self.local_storage_path), exist_ok=True)

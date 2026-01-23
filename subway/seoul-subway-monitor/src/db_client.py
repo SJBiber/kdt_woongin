@@ -1,7 +1,15 @@
 import logging
 from typing import List, Dict, Any
 from supabase import create_client, Client
-from src.config import Config
+import sys
+from pathlib import Path
+
+# 프로젝트 루트 경로 설정 (config/ 에 접근하기 위함)
+PROJECT_ROOT = Path(__file__).parent.parent
+if str(PROJECT_ROOT / 'config') not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT / 'config'))
+
+from config import Config
 
 logger = logging.getLogger(__name__)
 
