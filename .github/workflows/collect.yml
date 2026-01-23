@@ -21,19 +21,19 @@ jobs:
     
     - name: 의존성 설치
       run: |
-        pip install -r config/requirements.txt
+        pip install -r youtube_trend_tracker/config/requirements.txt
     
     - name: 환경 변수 설정
       run: |
-        mkdir -p config
-        echo "YOUTUBE_API_KEY_1=${{ secrets.YOUTUBE_API_KEY_1 }}" >> config/.env
-        echo "YOUTUBE_API_KEY_2=${{ secrets.YOUTUBE_API_KEY_2 }}" >> config/.env
-        echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> config/.env
-        echo "SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}" >> config/.env
+        mkdir -p youtube_trend_tracker/config
+        echo "YOUTUBE_API_KEY_1=${{ secrets.YOUTUBE_API_KEY_1 }}" >> youtube_trend_tracker/config/.env
+        echo "YOUTUBE_API_KEY_2=${{ secrets.YOUTUBE_API_KEY_2 }}" >> youtube_trend_tracker/config/.env
+        echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> youtube_trend_tracker/config/.env
+        echo "SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}" >> youtube_trend_tracker/config/.env
     
     - name: 데이터 수집 실행
       run: |
-        cd scripts
+        cd youtube_trend_tracker/scripts
         # 최근 1일 수집 (선택: 3, 일수: 1, 확인: y)
         echo -e "3\n1\ny" | python3 collect.py
     
@@ -42,5 +42,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: collection-logs
-        path: logs/*.log
+        path: youtube_trend_tracker/logs/*.log
         retention-days: 7
