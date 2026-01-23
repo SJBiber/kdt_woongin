@@ -90,8 +90,8 @@ class YouTubeTrendCrawler:
 
         return video_list
 
-    def get_historical_data(self, keyword, total_days=180):
-        """긴 기간(180일)을 안전하게(나눠서) 수집하고 통계를 내는 함수"""
+    def get_historical_data(self, keyword, total_days=365):
+        """긴 기간(365일)을 안전하게(나눠서) 수집하고 통계를 내는 함수"""
         
         # 어제 날짜와 180일 전 날짜 계산
         end_date = datetime.now(timezone.utc) - timedelta(days=1)
@@ -140,10 +140,10 @@ def main():
         # 도구 준비
         crawler = YouTubeTrendCrawler()
         db = SupabaseManager()
-        keyword = "두바이 쫀득 쿠키"
+        keyword = "임성근 쉐프" 
         
         # 1. 데이터 수집 및 분석 시작
-        summary_df = crawler.get_historical_data(keyword, total_days=180)
+        summary_df = crawler.get_historical_data(keyword, total_days=365)
         
         # 2. 결과가 있으면 데이터베이스(Supabase)에 하나씩 저장
         if summary_df is not None:

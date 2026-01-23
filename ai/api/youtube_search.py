@@ -28,7 +28,7 @@ def youtube_search(query, max_results=2000):
         return None
 
     # 6개월 전 날짜 계산 (RFC 3339 형식: YYYY-MM-DDTHH:MM:SSZ)
-    six_months_ago = datetime.utcnow() - timedelta(days=182) # 약 6개월
+    six_months_ago = datetime.utcnow() - timedelta(days=364) # 약 12개월
     published_after = six_months_ago.strftime('%Y-%m-%dT%H:%M:%SZ')
 
     # YouTube API 서비스 객체 생성
@@ -51,6 +51,8 @@ def youtube_search(query, max_results=2000):
             maxResults=results_to_fetch, # 요청 개수
             type='video',           # 비디오 타입만 검색
             order='date',           # 최신 날짜순 정렬
+            regionCode="KR",  # 한국 지역
+            relevanceLanguage="ko",
             publishedAfter=published_after, # 최근 6개월 이내의 영상만 필터링
             pageToken=next_page_token # 다음 페이지를 가져오기 위한 토큰
         ).execute()

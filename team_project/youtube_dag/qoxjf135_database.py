@@ -13,9 +13,9 @@ class SupabaseManager:
         수집된 일별 데이터를 'daily_trends' 테이블에 저장하거나 업데이트하는 함수
         """
         # SQL 문법 설명:
-        # INSERT INTO ... : 데이터를 삽입합니다.
+        # INSERT INTO ... : 데이터를 삽입.
         # ON CONFLICT (date, keyword) : 만약 '날짜'와 '키워드'가 같은 데이터가 이미 있다면 (중복 발생 시),
-        # DO UPDATE SET ... : 기존 로직을 무시하고 새로운 정보(EXCLUDED)로 덮어씌웁니다 (업데이트).
+        # DO UPDATE SET ... : 기존 로직을 무시하고 새로운 정보(EXCLUDED)로 덮어씌움 (업데이트).
         sql = """
         INSERT INTO daily_trends (date, keyword, video_count, total_views, total_likes, total_comments)
         VALUES (%s, %s, %s, %s, %s, %s)
@@ -27,7 +27,7 @@ class SupabaseManager:
             total_comments = EXCLUDED.total_comments;
         """
         
-        # 실제 데이터 값을 SQL의 %s 자리에 순서대로 넣습니다.
+        # 실제 데이터 값을 SQL의 %s 자리에 순서대로 넣음.
         params = (
             summary_data['date'],
             summary_data['keyword'],
@@ -38,9 +38,9 @@ class SupabaseManager:
         )
         
         try:
-            # 준비한 SQL 문을 실행합니다.
+            # 준비한 SQL 문을 실행.
             self.hook.run(sql, parameters=params)
             print(f"[+] DB 저장 완료 (SQL 직접 실행): {summary_data['date']} ({summary_data['keyword']})")
         except Exception as e:
-            print(f"[!] DB 저장 중 문제가 생겼습니다: {e}")
+            print(f"[!] DB 저장 중 문제가 생김: {e}")
             raise e
