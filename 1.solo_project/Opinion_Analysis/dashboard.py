@@ -48,10 +48,10 @@ def load_data():
         df = df.sort_values('published_at', ascending=False)
         df = df.drop_duplicates(subset=['comment_id'], keep='first')
         
-        # [신규] 감정 그룹화 함수 (0:긍정, 1,2,3,4:부정, 5:그외)
+        # [신규] 감정 그룹화 함수 (0,2:긍정, 1,3,4:부정, 5:그외)
         def group_sentiment(val):
-            if val == 0: return "긍정"
-            if val in [1, 2, 3, 4]: return "부정"
+            if val in [0,2]: return "긍정"
+            if val in [1, 3, 4]: return "부정"
             if val == 5: return "그외"
             return "미분류"
 
