@@ -28,6 +28,8 @@ jobs:
         mkdir -p 1.solo_project/youtube_trend_tracker/config
         echo "YOUTUBE_API_KEY_1=${{ secrets.YOUTUBE_API_KEY_1 }}" >> 1.solo_project/youtube_trend_tracker/config/.env
         echo "YOUTUBE_API_KEY_2=${{ secrets.YOUTUBE_API_KEY_2 }}" >> 1.solo_project/youtube_trend_tracker/config/.env
+        echo "YOUTUBE_API_KEY_3=${{ secrets.YOUTUBE_API_KEY_3 }}" >> 1.solo_project/youtube_trend_tracker/config/.env
+        echo "YOUTUBE_API_KEY_4=${{ secrets.YOUTUBE_API_KEY_4 }}" >> 1.solo_project/youtube_trend_tracker/config/.env
         echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> 1.solo_project/youtube_trend_tracker/config/.env
         echo "SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}" >> 1.solo_project/youtube_trend_tracker/config/.env
     
