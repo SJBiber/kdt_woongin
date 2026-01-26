@@ -2,8 +2,8 @@ name: YouTube 트렌드 자동 수집
 
 on:
   schedule:
-    # 매일 오전 9시 (KST = UTC+9, 즉 UTC 00:00)
-    - cron: '30 0 * * *'
+    # 매일 오후 7시 15분 (KST = UTC+9, 즉 UTC 10:15)
+    - cron: '15 10 * * *'
   workflow_dispatch:  # 수동 실행 가능
 
 jobs:
@@ -34,8 +34,7 @@ jobs:
     - name: 데이터 수집 실행
       run: |
         cd 1.solo_project/youtube_trend_tracker/scripts
-        # 전체 기간 수집 (9월 1일 ~ 어제)
-        # 선택: 1 (전체 기간), 확인: y
+        # 전체 기간 수집 (선택: 1, 확인: y)
         echo -e "1\ny" | python3 collect.py
     
     - name: 수집 결과 업로드

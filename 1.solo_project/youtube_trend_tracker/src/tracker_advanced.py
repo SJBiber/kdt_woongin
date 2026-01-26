@@ -51,27 +51,27 @@ class AdvancedTrendTracker:
         print(f"[🔄] API 키 전환 완료 (키 #{self.current_key_index + 1})")
         return True
 
-    def search_videos_by_upload_date(self, keyword, upload_date, retry_count=0):
+    def search_videos_by_time_range(self, keyword, start_time, end_time, retry_count=0, depth=0):
         """
-        특정 날짜에 업로드된 영상 검색 (API 키 자동 전환 포함)
+        특정 시간 범위에 업로드된 영상 검색 (재귀적 시간 분할 포함)
         
         Args:
             keyword (str): 검색 키워드
-            upload_date (date): 업로드 날짜
+            start_time (datetime): 시작 시간 (UTC)
+            end_time (datetime): 종료 시간 (UTC)
             retry_count (int): 재시도 횟수
+            depth (int): 재귀 깊이
             
         Returns:
             list: 영상 정보 리스트
         """
-        # 해당 날짜의 시작과 끝 시간
-        start_time = datetime.combine(upload_date, datetime.min.time()).replace(tzinfo=timezone.utc)
-        end_time = datetime.combine(upload_date, datetime.max.time()).replace(tzinfo=timezone.utc)
-        
         start_str = start_time.strftime('%Y-%m-%dT%H:%M:%SZ')
         end_str = end_time.strftime('%Y-%m-%dT%H:%M:%SZ')
         
         videos = []
         next_page_token = None
+        page_count = 0
+        max_pages = 20  # 최대 20페이지 (1000개 제한)
         
         try:
             while True:
@@ -115,6 +115,41 @@ class AdvancedTrendTracker:
 
                 # 다음 페이지 확인
                 next_page_token = search_response.get("nextPageToken")
+                page_count += 1
+                
+                # 페이지 제한에 도달하면 시간 범위를 분할
+                if page_count >= max_pages and next_page_token:
+                    if depth < 3:  # 최대 3단계까지 분할 (6시간 -> 3시간 -> 1.5시간)
+                        print(f"  ⚠️  결과가 많아 시간 범위를 분할합니다 (깊이: {depth+1})")
+                        
+                        # 시간 범위를 반으로 분할
+                        mid_time = start_time + (end_time - start_time) / 2
+                        
+                        # 전반부 검색
+                        videos_first = self.search_videos_by_time_range(
+                            keyword, start_time, mid_time, retry_count, depth + 1
+                        )
+                        time.sleep(0.5)
+                        
+                        # 후반부 검색
+                        videos_second = self.search_videos_by_time_range(
+                            keyword, mid_time, end_time, retry_count, depth + 1
+                        )
+                        
+                        # 중복 제거 후 병합
+                        all_videos = videos + videos_first + videos_second
+                        seen_ids = set()
+                        unique_videos = []
+                        for v in all_videos:
+                            if v['video_id'] not in seen_ids:
+                                seen_ids.add(v['video_id'])
+                                unique_videos.append(v)
+                        
+                        return unique_videos
+                    else:
+                        print(f"  ⚠️  최대 분할 깊이 도달, 일부 영상이 누락될 수 있습니다")
+                        break
+                
                 if not next_page_token:
                     break
                     
@@ -130,7 +165,9 @@ class AdvancedTrendTracker:
                     if self.switch_api_key():
                         print(f"[↻] 재시도 중...")
                         time.sleep(1)
-                        return self.search_videos_by_upload_date(keyword, upload_date, retry_count + 1)
+                        return self.search_videos_by_time_range(
+                            keyword, start_time, end_time, retry_count + 1, depth
+                        )
                 
                 print(f"[!] 모든 API 키의 할당량이 소진되었습니다.")
                 raise
@@ -138,6 +175,58 @@ class AdvancedTrendTracker:
                 print(f"[!] 검색 중 오류: {e}")
         
         return videos
+
+    def search_videos_by_upload_date(self, keyword, upload_date, retry_count=0):
+        """
+        특정 날짜에 업로드된 영상 검색 (6시간 단위로 분할)
+        
+        Args:
+            keyword (str): 검색 키워드
+            upload_date (date): 업로드 날짜
+            retry_count (int): 재시도 횟수
+            
+        Returns:
+            list: 영상 정보 리스트
+        """
+        all_videos = []
+        
+        # 하루를 6시간씩 4개 구간으로 분할
+        time_ranges = [
+            (0, 6),   # 00:00 - 06:00
+            (6, 12),  # 06:00 - 12:00
+            (12, 18), # 12:00 - 18:00
+            (18, None)  # 18:00 - 다음날 00:00
+        ]
+        
+        for start_hour, end_hour in time_ranges:
+            start_time = datetime.combine(upload_date, datetime.min.time()).replace(
+                hour=start_hour, tzinfo=timezone.utc
+            )
+            
+            # 마지막 구간은 다음 날 00:00으로 설정
+            if end_hour is None:
+                end_time = datetime.combine(upload_date + timedelta(days=1), datetime.min.time()).replace(
+                    tzinfo=timezone.utc
+                )
+            else:
+                end_time = datetime.combine(upload_date, datetime.min.time()).replace(
+                    hour=end_hour, tzinfo=timezone.utc
+                )
+            
+            videos = self.search_videos_by_time_range(keyword, start_time, end_time, retry_count)
+            all_videos.extend(videos)
+            
+            time.sleep(0.3)  # 구간 사이 대기
+        
+        # 중복 제거
+        seen_ids = set()
+        unique_videos = []
+        for v in all_videos:
+            if v['video_id'] not in seen_ids:
+                seen_ids.add(v['video_id'])
+                unique_videos.append(v)
+        
+        return unique_videos
 
     def calculate_growth(self, current_stats, previous_stats):
         """

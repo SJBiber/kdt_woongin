@@ -20,45 +20,85 @@ if sys.stdout.encoding != 'utf-8':
 def main():
     """시계열 데이터 조회"""
     try:
-        print("\n" + "="*80)
-        print("📊 특정 업로드 날짜의 시계열 데이터 확인")
-        print("="*80 + "\n")
+        print("\n" + "="*100)
+        print("📊 수집 기간별 전체 영상 통계 비교 (증감률 추이)")
+        print("="*100 + "\n")
         
         db = TrendDatabase()
         
-        # 예시: 1월 19일에 업로드된 영상들의 추이
         keyword = "임성근 쉐프"
-        upload_date = date(2026, 1, 19)
         
-        data = db.get_upload_date_timeline(keyword, upload_date)
+        # 수집 날짜별로 그룹화된 데이터 조회
+        response = db.supabase.table("daily_video_trends").select("*").eq(
+            "keyword", keyword
+        ).order(
+            "collected_date", desc=False
+        ).execute()
         
-        if not data:
-            print(f"❌ {upload_date}에 업로드된 영상 데이터가 없습니다.")
+        if not response.data:
+            print(f"❌ '{keyword}' 데이터가 없습니다.")
             return
         
-        print(f"📅 업로드 날짜: {upload_date}")
+        # 수집 날짜별로 합계 계산
+        from collections import defaultdict
+        collected_stats = defaultdict(lambda: {
+            'total_views': 0,
+            'total_comments': 0,
+            'total_likes': 0,
+            'video_count': 0
+        })
+        
+        for row in response.data:
+            collected_date = row['collected_date']
+            collected_stats[collected_date]['total_views'] += row['total_views']
+            collected_stats[collected_date]['total_comments'] += row['total_comments']
+            collected_stats[collected_date]['total_likes'] += row['total_likes']
+            collected_stats[collected_date]['video_count'] += row['video_count']
+        
+        # 날짜순으로 정렬
+        sorted_dates = sorted(collected_stats.keys())
+        
         print(f"📹 키워드: {keyword}")
-        print(f"📊 총 {len(data)}번 수집됨\n")
+        print(f"📊 총 {len(sorted_dates)}번 수집됨\n")
         
-        print("-" * 80)
-        print(f"{'수집일':<12} {'조회수':>12} {'댓글':>8} {'좋아요':>8} {'조회증가':>12} {'댓글증가':>8} {'좋아증가':>8}")
-        print("-" * 80)
+        print("-" * 100)
+        print(f"{'수집일':<12} {'조회수':>12} {'댓글':>8} {'좋아요':>8} {'조회증가':>12} {'댓글증가':>8} {'좋아증가':>8} {'증감률':>12}")
+        print("-" * 100)
         
-        for row in data:
-            collected = row['collected_date']
-            views = row['total_views']
-            comments = row['total_comments']
-            likes = row['total_likes']
-            v_growth = row.get('views_growth', 0)
-            c_growth = row.get('comments_growth', 0)
-            l_growth = row.get('likes_growth', 0)
+        prev_views = None
+        prev_comments = None
+        prev_likes = None
+        
+        for collected_date in sorted_dates:
+            stats = collected_stats[collected_date]
+            views = stats['total_views']
+            comments = stats['total_comments']
+            likes = stats['total_likes']
             
-            print(f"{collected:<12} {views:>12,} {comments:>8,} {likes:>8,} "
-                  f"{v_growth:>+12,} {c_growth:>+8,} {l_growth:>+8,}")
+            # 증감량 계산
+            if prev_views is not None:
+                v_growth = views - prev_views
+                c_growth = comments - prev_comments
+                l_growth = likes - prev_likes
+                
+                # 증감률 계산 (%)
+                v_rate = (v_growth / prev_views * 100) if prev_views > 0 else 0
+                
+                print(f"{collected_date:<12} {views:>12,} {comments:>8,} {likes:>8,} "
+                      f"{v_growth:>+12,} {c_growth:>+8,} {l_growth:>+8,} {v_rate:>+11.2f}%")
+            else:
+                print(f"{collected_date:<12} {views:>12,} {comments:>8,} {likes:>8,} "
+                      f"{'(기준)':>12} {'(기준)':>8} {'(기준)':>8} {'(기준)':>12}")
+            
+            # 다음 반복을 위해 저장
+            prev_views = views
+            prev_comments = comments
+            prev_likes = likes
         
-        print("-" * 80)
-        print("\n💡 이렇게 매일 같은 업로드 날짜의 영상들을 재조회하여")
-        print("   관심도 변화를 추적할 수 있습니다!\n")
+        print("-" * 100)
+        print("\n💡 수집 날짜별로 전체 영상들의 합계를 비교하여")
+        print("   전체적인 관심도 변화 추이를 확인할 수 있습니다!")
+        print("   증감률은 조회수 기준으로 계산됩니다.\n")
         
     except Exception as e:
         print(f"\n❌ 오류 발생: {e}")
