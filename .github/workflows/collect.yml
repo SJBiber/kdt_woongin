@@ -3,7 +3,7 @@ name: YouTube 트렌드 자동 수집
 on:
   schedule:
     # 매일 오후 7시 15분 (KST = UTC+9, 즉 UTC 10:15)
-    - cron: '17 10 * * *'
+    - cron: '20 10 * * *'
   workflow_dispatch:  # 수동 실행 가능
 
 jobs:
