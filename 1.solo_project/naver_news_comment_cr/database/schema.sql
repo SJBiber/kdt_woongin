@@ -29,3 +29,17 @@ CREATE INDEX idx_news_id ON naver_news_comments(news_id);
 CREATE INDEX idx_sentiment_label ON naver_news_comments(sentiment_label);
 CREATE INDEX idx_llm_sentiment ON naver_news_comments(llm_sentiment);
 CREATE INDEX idx_published_at ON naver_news_comments(published_at);
+
+-- 네이버 뉴스 기사 테이블 생성
+CREATE TABLE IF NOT EXISTS naver_news_articles (
+    news_id TEXT PRIMARY KEY,           -- 뉴스 고유 ID (oid_aid)
+    title TEXT NOT NULL,                -- 뉴스 제목
+    link TEXT UNIQUE NOT NULL,          -- 뉴스 링크
+    description TEXT,                   -- 뉴스 요약/설명
+    pub_date TIMESTAMP WITH TIME ZONE,  -- 발행 일시
+    origin_link TEXT,                   -- 원본 기사 링크
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 뉴스 기사 조회를 위한 인덱스
+CREATE INDEX idx_art_pub_date ON naver_news_articles(pub_date);
