@@ -1,0 +1,52 @@
+# 작업 목록: 유튜브 여론 분석 데이터 수집 및 정밀 분석 시스템
+
+- [x] **환경 설정 및 인프라 구축**
+    - [x] `.env` 설정 (Supabase, DeepSeek API Key)
+    - [x] 프로젝트 디렉토리 구조 확립 및 로깅 시스템 구축
+- [x] **데이터베이스 및 수집 엔진**
+    - [x] Supabase 테이블 설계 (`im_sung_gen_youtube_comments`)
+    - [x] 유튜브 영상 및 커뮤니티 게시글 댓글 수집기 구현 (`collector/`)
+    - [x] `1_collect_data.py`를 통한 멀티 URL 기반 자동 수집 시스템 구축 (기존 main.py 분리)
+- [x] **자연어 처리 및 데이터 고도화**
+    - [x] **[신규]** ET5(j5ng/et5-typos-corrector) 기반 맞춤법 및 오타 교정 모듈 구현 (`analyzer/corrector.py`)
+        - [x] 배치 처리 지원 (8개 단위)
+        - [x] GPU 자동 감지 및 활용
+        - [x] 짧은 텍스트(10자 미만) 스킵 로직
+        - [x] **현재 상태**: 성능 최적화를 위해 비활성화 (필요 시 재활성화 가능)
+    - [x] Kiwi (kiwipiepy) 기반 키워드 추출 및 사용자 사전 등록, 불용어 정제 로직 고도화 (`analyzer/nlp_engine.py`)
+        - [x] 불용어 리스트 **500개+로 확장** (조사, 어미, 대명사, 감탄사, 유튜브 특화 등)
+        - [x] 배치 처리 메서드 추가 (`preprocess_batch`)
+        - [x] Kiwi 사용자 사전 등록 (복합어/고유명사 분리 방지: 음주운전, 흑백요리사, 이재명)
+    - [x] `2_normalize_text.py` 프로그램 최적화
+        - [x] 배치 크기 50개로 증가 (8GB 메모리 최적화)
+        - [x] 처리 속도 로깅 추가
+        - [x] **성능**: 50개당 0.3초 (기존 대비 233배 향상)
+- [x] **정밀 감성 분석 시스템 (Hybrid Approach)**
+    - [x] **Local Model**: `3_local_analysis.py` (KoELECTRA 기반 6종 감정 분류)
+    - [x] **LLM Master**: `4_llm_analysis.py` (DeepSeek-V3 기반 6종 정밀 감정 분석)
+        - [x] 1/19 사건 맥락 및 날짜 기반 비꼼(Sarcasm) 판단 로직 반영
+        - [x] 정치적 방어 논리 및 유저 간 분쟁 예외 처리 반영
+- [x] **통계 분석 및 시각화**
+    - [x] 감성 점수 가중치 기반 통계 분석 엔진 구현 (`analyzer/stat_analyzer.py`)
+    - [x] **Streamlit 대시보드 구축** (`dashboard.py`)
+        - [x] 논란 전(1/18 이전) vs 논란 후(1/19 이후) 여론 대조 분석 차트
+        - [x] 긍정/부정/그외 3개 그룹화 분포 시각화
+        - [x] 감정 그룹별 필터링 워드클라우드 및 핵심 키워드 TOP 10
+        - [x] 백종원 비교분석 페이지 (4가지 가설 검증 기반)
+        - [x] 추이 비교분석 페이지 (시계열 + 주간 트렌드)
+        - [x] 영상 트렌드 페이지 (관심지수 분석)
+        - [x] 감정별 고정 색상 맵 적용
+        - [x] 감정 라벨 한글화
+- [x] **최종 고도화 및 최적화**
+    - [x] 분석 파이프라인 4단계 완전 분리 (수집-정제-로컬분석-LLM분석)
+    - [x] 분석 배치 크기 최적화 및 데이터 무결성 검증
+    - [x] Supabase 페이지네이션 기반 전체 데이터 로드 로직 구현
+- [x] **백종원 데이터 파이프라인**
+    - [x] 백종원 데이터 수집 스크립트 (`1_collect_baek_jongwon.py`)
+    - [x] 백종원 텍스트 정규화 (`2_normalize_baek_jongwon.py`)
+    - [x] 백종원 BERT 분석 (`3_local_analysis_baek_jongwon.py`)
+    - [x] 백종원 LLM 분석 (`4_llm_analysis_baek_jongwon.py`)
+    - [x] 백종원 전용 DeepSeek 분석기 (`analyzer/deepseek_baek_jongwon_analyzer.py`)
+    - [x] Supabase 백종원 테이블 스키마 및 클라이언트 메서드
+- [x] **최종 결과 리포트 및 인사이트 도출**
+    - [x] 사건 전후 여론 변곡점 상세 분석 및 보고서 작성
