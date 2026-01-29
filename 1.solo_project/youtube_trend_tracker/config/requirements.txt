@@ -1,5 +1,0 @@
-google-api-python-client
-pandas
-python-dotenv
-supabase
-tqdm
