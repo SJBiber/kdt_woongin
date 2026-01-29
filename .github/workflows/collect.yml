@@ -19,21 +19,21 @@ jobs:
     
     - name: 의존성 설치
       run: |
-        pip install -r 1.solo_project/youtube_trend_tracker/config/requirements.txt
+        pip install -r 1.solo_project/people_good_bad_opinion/youtube_trend_tracker/config/requirements.txt
     
     - name: 환경 변수 설정
       run: |
-        mkdir -p 1.solo_project/youtube_trend_tracker/config
-        echo "YOUTUBE_API_KEY_1=${{ secrets.YOUTUBE_API_KEY_1 }}" >> 1.solo_project/youtube_trend_tracker/config/.env
-        echo "YOUTUBE_API_KEY_2=${{ secrets.YOUTUBE_API_KEY_2 }}" >> 1.solo_project/youtube_trend_tracker/config/.env
-        echo "YOUTUBE_API_KEY_3=${{ secrets.YOUTUBE_API_KEY_3 }}" >> 1.solo_project/youtube_trend_tracker/config/.env
-        echo "YOUTUBE_API_KEY_4=${{ secrets.YOUTUBE_API_KEY_4 }}" >> 1.solo_project/youtube_trend_tracker/config/.env
-        echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> 1.solo_project/youtube_trend_tracker/config/.env
-        echo "SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}" >> 1.solo_project/youtube_trend_tracker/config/.env
+        mkdir -p 1.solo_project/people_good_bad_opinion/youtube_trend_tracker/config
+        echo "YOUTUBE_API_KEY_1=${{ secrets.YOUTUBE_API_KEY_1 }}" >> 1.solo_project/people_good_bad_opinion/youtube_trend_tracker/config/.env
+        echo "YOUTUBE_API_KEY_2=${{ secrets.YOUTUBE_API_KEY_2 }}" >> 1.solo_project/people_good_bad_opinion/youtube_trend_tracker/config/.env
+        echo "YOUTUBE_API_KEY_3=${{ secrets.YOUTUBE_API_KEY_3 }}" >> 1.solo_project/people_good_bad_opinion/youtube_trend_tracker/config/.env
+        echo "YOUTUBE_API_KEY_4=${{ secrets.YOUTUBE_API_KEY_4 }}" >> 1.solo_project/people_good_bad_opinion/youtube_trend_tracker/config/.env
+        echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> 1.solo_project/people_good_bad_opinion/youtube_trend_tracker/config/.env
+        echo "SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}" >> 1.solo_project/people_good_bad_opinion/youtube_trend_tracker/config/.env
     
     - name: 데이터 수집 실행
       run: |
-        cd 1.solo_project/youtube_trend_tracker/scripts
+        cd 1.solo_project/people_good_bad_opinion/youtube_trend_tracker/scripts
         # 전체 기간 수집 (선택: 1, 확인: y)
         echo -e "1\ny" | python3 collect.py
     
@@ -42,5 +42,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: collection-logs
-        path: 1.solo_project/youtube_trend_tracker/logs/*.log
+        path: 1.solo_project/people_good_bad_opinion/youtube_trend_tracker/logs/*.log
         retention-days: 7
